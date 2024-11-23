@@ -11,18 +11,18 @@ datasource db {
 }
 
 model Counts {
-  id         Int         @id @default(autoincrement()) // Tự động tăng
-  name_id    String      @unique // name_id là duy nhất
+  id         Int         @id @default(autoincrement())
+  name_id    String      @unique
   count      Int
-  accessLogs AccessLog[] @relation("AccessLogCounts") // Quan hệ với AccessLog
+  accessLogs AccessLog[] @relation("CountsToAccessLog")
 }
 
 model AccessLog {
-  id           Int      @id @default(autoincrement())  // Tự động tăng
-  ip_address   String   // Địa chỉ IP
-  last_accessed DateTime @default(now()) // Thời gian truy cập
+  id           Int      @id @default(autoincrement())
+  ip_address   String
+  last_accessed DateTime @default(now())
   countId      Int
-  Counts       Counts   @relation("AccessLogCounts", fields: [countId], references: [id]) // Khóa ngoại trỏ về bảng Counts
+  Counts       Counts   @relation("CountsToAccessLog", fields: [countId], references: [id])
 
-  @@index([countId]) // Tạo chỉ mục cho countId
+  @@index([countId]) // Chỉ mục cho countId
 }
