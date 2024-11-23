@@ -47,12 +47,15 @@ router.get(['/id/:name_id', '/'], async (req, res) => {
                 where: { ip_address },
                 update: {
                     last_accessed: new Date(), // Cập nhật thời gian truy cập
-                    countId: updateCount.id, // Liên kết với Count
+                    countId: updateCount.id,  // Liên kết với Count
                 },
                 create: {
                     ip_address,
                     last_accessed: new Date(),
-                    countId: updateCount.id, // Liên kết với Count
+                    countId: updateCount.id,  // Liên kết với Count
+                    counts: {
+                        connect: { id: updateCount.id }, // Kết nối với bản ghi trong bảng Counts
+                    },
                 },
             });
 
