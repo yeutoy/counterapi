@@ -11,7 +11,18 @@ datasource db {
 }
 
 model Counts {
-  id      Int    @id @default(autoincrement())
-  name_id String @unique
-  count   Int
+  id         Int         @id @default(autoincrement())
+  name_id    String      @unique
+  count      Int
+  accessLogs AccessLog[] // Mối quan hệ 1-n với AccessLog
+}
+
+model AccessLog {
+  id           Int      @id @default(autoincrement())
+  ip_address   String
+  last_accessed DateTime @default(now())
+  countId      Int
+  Counts       Counts   @relation(fields: [countId], references: [id]) // Khóa ngoại liên kết với Counts.id
+
+  @@index([countId]) // Chỉ mục cho countId
 }
