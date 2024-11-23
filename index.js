@@ -10,7 +10,7 @@ const set = require('./routes/set');
 dotenv.config();
 const app = express();
 // const prisma = new PrismaClient();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5432;
 
 app.use(express.json());
 app.use(cors());
