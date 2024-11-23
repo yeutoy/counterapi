@@ -14,7 +14,7 @@ model Counts {
   id         Int         @id @default(autoincrement())
   name_id    String      @unique
   count      Int
-  accessLogs AccessLog[] // Mối quan hệ 1-n với AccessLog
+  accessLogs AccessLog[] @relation
 }
 
 model AccessLog {
