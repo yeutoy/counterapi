@@ -19,7 +19,7 @@ model Counts {
 
 model AccessLog {
   id         Int       @id @default(autoincrement())
-  ip_address String
+  ip_address String    @unique
   last_accessed DateTime @default(now())
   countid    Int       // Cột này tham chiếu tới Counts
   counts     Counts    @relation(fields: [countid], references: [id])
