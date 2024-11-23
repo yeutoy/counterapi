@@ -22,7 +22,7 @@ model AccessLog {
   ip_address   String
   last_accessed DateTime @default(now())
   countId      Int
-  Counts       Counts   @relation(fields: [countId], references: [id]) // Khóa ngoại liên kết với Counts.id
+  Counts       Counts   @relation(fields: [countId], references: [id])
 
-  @@index([countId]) // Chỉ mục cho countId
+  @@index([countId])
 }
