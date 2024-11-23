@@ -6,47 +6,48 @@ const prisma = new PrismaClient();
 
 router.get(['/id/:name_id', '/'], async (req, res) => {
     const name_id = req.params.name_id || req.query.id;
-    const ip_address = req.headers['x-forwarded-for'] || req.connection.remoteAddress; // Lấy địa chỉ IP của client
+    const ip_address = req.headers['x-forwarded-for'] || req.connection.remoteAddress; // Lấy IP của client
 
     try {
-        // Kiểm tra xem có bản ghi nào của địa chỉ IP này trong bảng AccessLog chưa và thời gian truy cập gần đây
-        const recentLog = await prisma.accessLog.findFirst({
-            where: {
-                ip_address: ip_address,
-                last_accessed: {
-                    gte: new Date(new Date().getTime() - 60 * 60 * 1000), // Kiểm tra trong vòng 1 giờ qua
-                },
-            },
-        });
-
         // Kiểm tra ID trong bảng Counts
         const foundId = await prisma.counts.findUnique({
-            where: { name_id }
+            where: { name_id },
         });
 
-        // Nếu không có bản ghi IP (người dùng mới) hoặc thời gian truy cập đã quá 1 giờ
-        if (!recentLog || (recentLog && new Date() - new Date(recentLog.last_accessed) > 60 * 60 * 1000)) {
-            // Nếu ID tồn tại, tăng bộ đếm
+        // Mặc định bộ đếm
+        let currentCount = foundId ? foundId.count : 0;
+
+        // Tìm bản ghi AccessLog liên quan đến IP
+        const recentLog = await prisma.accessLog.findUnique({
+            where: { ip_address }, // Chỉ cần IP vì `@unique` đã đảm bảo duy nhất
+        });
+
+        // Kiểm tra điều kiện tăng bộ đếm
+        const shouldIncrement =
+            !recentLog || // Người dùng mới
+            new Date() - new Date(recentLog.last_accessed) > 60 * 60 * 1000; // Hoặc đã quá 1 giờ
+
+        if (shouldIncrement) {
             let updateCount;
             if (foundId) {
-                // Tăng bộ đếm lên 1
+                // Tăng bộ đếm nếu ID tồn tại
                 updateCount = await prisma.counts.update({
                     where: { name_id },
-                    data: { count: foundId.count + 1 }
+                    data: { count: foundId.count + 1 },
                 });
             } else {
-                // Nếu ID không tồn tại, tạo mới và tăng bộ đếm lên 1
+                // Tạo mới và đặt bộ đếm ban đầu là 1
                 updateCount = await prisma.counts.create({
-                    data: { name_id, count: 1 }
+                    data: { name_id, count: 1 },
                 });
             }
 
-            // Lưu thông tin IP và thời gian vào bảng AccessLog
+            // Cập nhật hoặc tạo mới AccessLog
             await prisma.accessLog.upsert({
                 where: { ip_address },
                 update: {
-                    last_accessed: new Date(),  // Cập nhật thời gian truy cập
-                    countId: foundId ? foundId.id : updateCount.id, // Liên kết với Count
+                    last_accessed: new Date(), // Cập nhật thời gian truy cập
+                    countId: updateCount.id, // Liên kết với Count
                 },
                 create: {
                     ip_address,
@@ -55,23 +56,18 @@ router.get(['/id/:name_id', '/'], async (req, res) => {
                 },
             });
 
-            // Trả về bộ đếm sau khi tăng
-            return res.json({
-                status: "success",
-                message: `The count of ID '${updateCount.name_id}' was successfully updated`,
-                count: updateCount.count,  // Trả về bộ đếm sau khi tăng
-            });
-
-        } else {
-            // Nếu IP đã truy cập trong vòng 1 giờ qua thì không thay đổi bộ đếm
-            // Trả về giá trị bộ đếm hiện tại từ cơ sở dữ liệu
-            return res.json({
-                status: "success",
-                message: `The count remains the same. Last access was within 1 hour.`,
-                count: foundId ? foundId.count : 0,  // Trả về giá trị bộ đếm hiện tại
-            });
+            // Cập nhật bộ đếm hiện tại sau khi tăng
+            currentCount = updateCount.count;
         }
 
+        // Trả về giá trị bộ đếm hiện tại
+        res.json({
+            status: "success",
+            message: shouldIncrement
+                ? `The count of ID '${name_id}' was successfully updated`
+                : `The count remains the same. Last access was within 1 hour.`,
+            count: currentCount,
+        });
     } catch (error) {
         console.error("Error:", error);
         res.status(500).json({
