@@ -72,10 +72,11 @@ router.get('/:name_id/:num_count', async (req, res) => {
             console.log("Create:", addNewId);
         }
     } catch (error) {
-        console.error("Error handling request:", error);
+        console.error("Error handling request:", error); // Log chi tiết lỗi
         res.status(500).json({
             status: "error",
-            message: "An error occurred while processing the request.",
+            message: error.message || "An error occurred while processing the request.",
+            stack: error.stack, // Cung cấp thông tin stack trace nếu có
         });
     }
 });
@@ -148,10 +149,11 @@ router.get('/', async (req, res) => {
             console.log("Create:", addNewId);
         }
     } catch (error) {
-        console.error("Error handling request:", error);
+        console.error("Error handling request:", error); // Log chi tiết lỗi
         res.status(500).json({
             status: "error",
-            message: "An error occurred while processing the request.",
+            message: error.message || "An error occurred while processing the request.",
+            stack: error.stack, // Cung cấp thông tin stack trace nếu có
         });
     }
 });
